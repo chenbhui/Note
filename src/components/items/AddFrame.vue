@@ -10,16 +10,18 @@
 
 <script>
 import { ref } from "vue";
+import { useStore } from "vuex";
 export default {
   name: "AddFrame",
-  setup(props, ctx) {
+  setup() {
     const addBox = ref(null);
     const title = ref("");
     const content = ref("");
+    const store = useStore();
     function save() {
       if (title.value != "" && content.value != "") {
         cancel();
-        ctx.emit("changeData", title.value, content.value);
+        store.dispatch("addData", [ title.value, content.value ]);
       }
     }
     function cancel() {

@@ -9,18 +9,34 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { ref,onUnmounted, reactive } from "vue";
+import { useStore } from "vuex"
+import emitter from "@/utils/eventbus.js";
 export default {
   name: "Tip",
-  setup(props, ctx) {
+  setup() {
+    const store = useStore();
     const tip = ref(null);
+    // 删除的数据
+    let delData = reactive([]);
     const noDisplay = () => {
       tip.value.style.display = "none";
     };
     const sendDeleteDire = () => {
       noDisplay();
-      ctx.emit("sendDelete");
+      store.dispatch("deleteData", delData);
+      // 告诉List组件已删除
+      emitter.emit('deleted');
     };
+    const saveDelData = (d) => {
+      delData = d;
+    }
+    // 注册事件
+    emitter.on('getDelData',saveDelData)
+    // 注销事件
+    onUnmounted(() => {
+      emitter.off('getDelData',saveDelData)
+    })
     return { tip, sendDeleteDire, noDisplay };
   },
 };

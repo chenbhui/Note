@@ -32,7 +32,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr v-for="(d, idx) of data" :key="d.id">
+      <tr v-for="d of data" :key="d.id">
         <td v-for="(v, k) of d" :key="v">
           <input
             type="checkbox"
@@ -47,13 +47,14 @@
 </template>
 
 <script>
-import { inject, ref, watch } from "@vue/runtime-core";
+import { onUnmounted, ref, watch } from "@vue/runtime-core";
 import * as sort from "@/utils/sort.js";
+import emitter from "@/utils/eventbus.js";
+import { useStore } from "vuex"
 export default {
   name: "List",
-  props: ["isDelete"],
-  setup(props, ctx) {
-    const data = inject("data");
+  setup() {
+    const data = useStore().state.data;
     const keys = ["Id", "Title", "Content", "Status"];
     // 按钮颜色
     const atn = ref("upId");
@@ -61,14 +62,10 @@ export default {
     const checkedArr = ref([]);
     // 全选
     const checkedAll = ref(false);
-    watch(checkedArr, (newVal) => {
-      if (props.isDelete) {
-        checkedArr.value.length = 0;
-        if (newVal.length > 0) checkedArr.value.push(newVal[newVal.length - 1]);
-      }
+    watch(checkedArr, () => {
       const tip = document.querySelector(".tip");
       // 删除后
-      ctx.emit("sendDeleteData", checkedArr.value);
+      emitter.emit("getDelData", checkedArr.value);
       // 当全部选择时，把全选勾上
       if (data.length == checkedArr.value.length) {
         checkedAll.value = true;
@@ -87,28 +84,37 @@ export default {
       // 全选勾上，全部选择
       if (checkedAll.value) {
         if (data.length != checkedArr.value.length) {
-          if (props.isDelete) {
-            checkedArr.value.length = 0;
-          }
           checkedArr.value.length = 0;
           for (const d of data) {
             checkedArr.value.push(d.id);
           }
           tip.style.display = "block";
-          ctx.emit("sendDeleteData", checkedArr.value);
+          emitter.emit("sendDeleteData", checkedArr.value);
         }
       }
     });
+    // 升序
     const upSort = (val) => {
       val = "up" + val;
       atn.value = val;
       sort[val](data);
     };
+    // 降序
     const downSort = (val) => {
       val = "down" + val;
       atn.value = val;
       sort[val](data);
     };
+    // 事件函数
+    const clearCheckedArr = () => {
+      checkedArr.value.length = 0;
+    } 
+    // 绑定事件 Tip组件告诉此组件 已将内容删除 应该将checkedArr清空
+    emitter.on('deleted', clearCheckedArr);
+    // 删除事件
+    onUnmounted(() => {
+      emitter.on('deleted', clearCheckedArr);
+    })
     return {
       keys,
       data,

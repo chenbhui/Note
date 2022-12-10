@@ -17,11 +17,12 @@
 
 <script>
 import { reactive } from '@vue/reactivity'
-import { computed, inject } from '@vue/runtime-core';
+import { computed } from '@vue/runtime-core';
+import { useStore } from "vuex"
 export default {
     name: 'Statistics',
     setup() {
-        const data = inject('data');
+        const data = useStore().state.data;
         const state = reactive({
             'total': 18,
             'completed': 12,
